@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rubu tic</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg1:#0a0420;--bg2:#1d0b4a;--card:rgba(255,255,255,.06);--ink:#f4f0ff;--x:#ff2e93;--o:#00e5ff;--vio:#8a4dff;--line:rgba(160,120,255,.38);--mute:#b9a9ee;color-scheme:dark;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*,*::before,*::after{box-sizing:inherit;-webkit-tap-highlight-color:transparent}
+html{scroll-padding-top:env(safe-area-inset-top,0px);background:var(--bg1)}
+body{margin:0;min-height:100vh;color:var(--ink);font-family:"Baloo 2",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;justify-content:center;
+background:radial-gradient(600px 400px at 85% -5%,rgba(255,46,147,.28),transparent 70%),radial-gradient(600px 420px at 0% 105%,rgba(0,229,255,.22),transparent 70%),linear-gradient(160deg,var(--bg1),var(--bg2))}
+main{width:100%;max-width:440px;padding:18px 16px 28px;display:flex;flex-direction:column;gap:14px}
+h1{margin:0;text-align:center;font-size:clamp(32px,10vw,46px);font-weight:800;letter-spacing:-.5px;line-height:1.15;
+background:linear-gradient(90deg,var(--x),#b46bff 50%,var(--o));-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 14px rgba(180,107,255,.55))}
+.modes{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:var(--card);border:1px solid var(--line);padding:5px;border-radius:16px}
+.modes button{min-height:44px;border:0;border-radius:12px;background:transparent;color:var(--mute);font-weight:700;font-size:15px;font-family:inherit;cursor:pointer}
+.modes button[aria-pressed="true"]{background:linear-gradient(90deg,var(--x),var(--vio));color:#fff;box-shadow:0 0 16px rgba(255,46,147,.55)}
+.scores{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center}
+.score{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:8px 4px}
+.score.px{border-color:var(--x);box-shadow:0 0 14px -4px var(--x)}
+.score.po{border-color:var(--o);box-shadow:0 0 14px -4px var(--o)}
+.score small{display:block;color:var(--mute);font-weight:700;font-size:13px;line-height:1.2}
+.score b{font-size:26px;line-height:1.1}
+#status,#ost{min-height:44px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;text-align:center}
+#status.x,#ost.x{color:var(--x);text-shadow:0 0 14px var(--x)}#status.o,#ost.o{color:var(--o);text-shadow:0 0 14px var(--o)}
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;aspect-ratio:1}
+.cell{border:1.5px solid var(--line);border-radius:20px;background:var(--card);box-shadow:inset 0 0 18px rgba(138,77,255,.18);font-family:inherit;font-weight:800;font-size:min(24vw,104px);line-height:1;padding:0;cursor:pointer;color:var(--ink);display:flex;align-items:center;justify-content:center;touch-action:manipulation}
+.cell.x{color:var(--x);text-shadow:0 0 12px var(--x),0 0 30px rgba(255,46,147,.65);border-color:rgba(255,46,147,.55)}
+.cell.o{color:var(--o);text-shadow:0 0 12px var(--o),0 0 30px rgba(0,229,255,.65);border-color:rgba(0,229,255,.55)}
+.cell.filled{animation:pop .22s ease-out}
+.cell.win{animation:win .7s ease-in-out 3;color:#fff;text-shadow:0 0 12px rgba(255,255,255,.8)}
+.cell.win.x{background:linear-gradient(135deg,var(--x),var(--vio));box-shadow:0 0 26px rgba(255,46,147,.8)}
+.cell.win.o{background:linear-gradient(135deg,var(--o),#3a7bff);box-shadow:0 0 26px rgba(0,229,255,.8)}
+.cell:focus-visible,button:focus-visible{outline:3px solid var(--o);outline-offset:3px}
+@media (hover:hover){.cell:not(.filled):not(.locked):hover{border-color:var(--vio);box-shadow:0 0 16px rgba(138,77,255,.5)}}
+.actions{display:grid;grid-template-columns:2fr 1fr;gap:8px}
+.actions button{min-height:48px;border:0;border-radius:14px;font-weight:800;font-size:17px;font-family:inherit;cursor:pointer;background:linear-gradient(90deg,var(--x),var(--vio));color:#fff;box-shadow:0 0 18px rgba(255,46,147,.45)}
+.actions button.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line);box-shadow:none}
+@keyframes pop{from{transform:scale(.6)}to{transform:scale(1)}}
+@keyframes win{50%{transform:scale(1.08)}}
+@media (prefers-reduced-motion:reduce){.cell.filled,.cell.win{animation:none}}
+.pill{text-align:center;color:var(--mute);font-weight:700;font-size:15px;min-height:28px}.actions button:disabled{opacity:.4;cursor:default}.actions{grid-template-columns:2fr 1fr}.claim{min-height:52px;border:0;border-radius:14px;font-weight:800;font-size:18px;font-family:inherit;cursor:pointer;color:#fff;background:linear-gradient(90deg,var(--vio),#2f6bff);box-shadow:0 0 20px rgba(80,120,255,.55)}.claim.back{background:transparent;border:1.5px solid var(--line);box-shadow:none;color:var(--ink)}main[hidden]{display:none}
+</style>
+</head>
+<body>
+<main id="v1">
+  <h1>Rubu tic</h1>
+  <div class="modes" role="group" aria-label="Game mode">
+    <button type="button" data-mode="friend" aria-pressed="true">With friend</button>
+    <button type="button" data-mode="easy" aria-pressed="false">Baby Mind</button>
+    <button type="button" data-mode="hard" aria-pressed="false">6th Gen Ai</button>
+  </div>
+  <div class="pill" id="cap"></div>
+  <div class="scores">
+    <div class="score px"><small id="nx">X</small><b id="sx">0</b></div>
+    <div class="score"><small>Draws</small><b id="sd">0</b></div>
+    <div class="score po"><small id="no">O</small><b id="so">0</b></div>
+  </div>
+  <div id="status" role="status" aria-live="polite"></div>
+  <div class="board" id="board"></div>
+  <div class="actions" style="grid-template-columns:1fr">
+    <button type="button" id="again">Play again</button>
+  </div>
+  <button type="button" class="claim" id="claim">Claim Point</button>
+</main>
+<main id="v2" hidden>
+  <h1>Online</h1>
+  <div class="pill" id="pill"></div>
+  <div class="pill">Lifetime record · Online</div>
+  <div class="scores">
+    <div class="score px" id="s1"><small>Won</small><b id="sm">0</b></div>
+    <div class="score"><small>Draws</small><b id="osd">0</b></div>
+    <div class="score po" id="s2"><small>Lost</small><b id="oso">0</b></div>
+  </div>
+  <div id="ost" role="status" aria-live="polite"></div>
+  <div class="board" id="obd"></div>
+  <div class="actions">
+    <button type="button" id="main">Find match</button>
+    <button type="button" id="leave" class="ghost">Leave</button>
+  </div>
+  <button type="button" class="claim back" id="back">Back to Rubu tic</button>
+</main>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+window.RT = (function () {
+  var KEY = 'rubutic:stats:v1';
+  function blank() { return { friend: { X: 0, O: 0, D: 0 }, easy: { X: 0, O: 0, D: 0 }, hard: { X: 0, O: 0, D: 0 }, online: { me: 0, opp: 0, D: 0 } }; }
+  var stats = blank();
+  try {
+    var raw = localStorage.getItem(KEY);
+    if (raw) {
+      var o = JSON.parse(raw);
+      for (var m in stats) for (var k in stats[m]) {
+        var v = o && o[m] && o[m][k];
+        if (typeof v === 'number' && isFinite(v) && v >= 0) stats[m][k] = Math.floor(v);
+      }
+    }
+  } catch (e) {}
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(stats)); } catch (e) {} }
+  return { stats: stats, save: save };
+})();
+</script>
+<script>
+
+(function () {
+  var LINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  var b, turn, over, win, busy, timer = null;
+  var mode = 'friend', starter = 'X';
+  function S() { return RT.stats[mode]; }
+  var boardEl = document.getElementById('board');
+  var statusEl = document.getElementById('status');
+  var cells = [];
+
+  function $(id) { return document.getElementById(id); }
+  function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+  function empties() { var r = []; for (var i = 0; i < 9; i++) if (!b[i]) r.push(i); return r; }
+
+  function winner(bd) {
+    for (var k = 0; k < LINES.length; k++) {
+      var l = LINES[k];
+      if (bd[l[0]] && bd[l[0]] === bd[l[1]] && bd[l[0]] === bd[l[2]]) return { p: bd[l[0]], line: l };
+    }
+    return null;
+  }
+
+  // Computer is always O. Higher score is better for O.
+  function minimax(bd, p, depth) {
+    var w = winner(bd);
+    if (w) return w.p === 'O' ? 10 - depth : depth - 10;
+    var free = [];
+    for (var i = 0; i < 9; i++) if (!bd[i]) free.push(i);
+    if (!free.length) return 0;
+    var best = p === 'O' ? -99 : 99;
+    for (var j = 0; j < free.length; j++) {
+      bd[free[j]] = p;
+      var s = minimax(bd, p === 'O' ? 'X' : 'O', depth + 1);
+      bd[free[j]] = null;
+      if (p === 'O' ? s > best : s < best) best = s;
+    }
+    return best;
+  }
+
+  function bestMove() {
+    var free = empties();
+    if (free.length === 9) return pick([0, 2, 4, 6, 8]);
+    var best = -99, moves = [];
+    for (var i = 0; i < free.length; i++) {
+      b[free[i]] = 'O';
+      var s = minimax(b, 'X', 1);
+      b[free[i]] = null;
+      if (s > best) { best = s; moves = [free[i]]; }
+      else if (s === best) moves.push(free[i]);
+    }
+    return pick(moves);
+  }
+
+  function buzz(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
+
+  function names() {
+    return mode === 'friend' ? { X: 'X wins', O: 'O wins' } : { X: 'Won', O: 'Lost' };
+  }
+
+  function render() {
+    var n = names();
+    $('cap').textContent = 'Lifetime record · ' + ({ friend: 'With friend', easy: 'Baby Mind', hard: '6th Gen Ai' })[mode];
+    $('nx').textContent = n.X; $('no').textContent = n.O;
+    $('sx').textContent = S().X; $('so').textContent = S().O; $('sd').textContent = S().D;
+    for (var i = 0; i < 9; i++) {
+      var c = cells[i], v = b[i];
+      var isWin = win && win.line.indexOf(i) > -1;
+      var wasFilled = c.classList.contains('filled');
+      c.className = 'cell' + (v ? ' ' + v.toLowerCase() + (wasFilled ? ' filled' : ' filled') : '') +
+        (isWin ? ' win' : '') + ((over || busy) && !v ? ' locked' : '');
+      c.textContent = v || '';
+      c.setAttribute('aria-label', 'Square ' + (i + 1) + (v ? ', ' + v : ', empty'));
+    }
+    var t = '', cls = '';
+    if (win) { t = mode === 'friend' ? win.p + ' wins!' : (win.p === 'X' ? 'You win!' : 'Computer wins'); cls = win.p.toLowerCase(); }
+    else if (over) { t = "It's a draw"; }
+    else if (busy) { t = 'Computer is thinking…'; cls = 'o'; }
+    else { t = mode === 'friend' ? turn + "'s turn" : 'Your turn'; cls = turn.toLowerCase(); }
+    statusEl.textContent = t;
+    statusEl.className = cls;
+  }
+
+  function computerTurn() {
+    busy = true; render();
+    timer = setTimeout(function () {
+      timer = null; busy = false;
+      if (over) return;
+      play(mode === 'hard' ? bestMove() : pick(empties()));
+    }, 450);
+  }
+
+  function play(i) {
+    if (over || busy || b[i]) return;
+    b[i] = turn;
+    buzz(12);
+    var w = winner(b);
+    if (w) { over = true; win = w; S()[w.p]++; RT.save(); buzz([40, 40, 80]); }
+    else if (!empties().length) { over = true; S().D++; RT.save(); }
+    else turn = turn === 'X' ? 'O' : 'X';
+    if (!over && mode !== 'friend' && turn === 'O') { computerTurn(); return; }
+    render();
+  }
+
+  function newRound(swap) {
+    if (timer) { clearTimeout(timer); timer = null; }
+    if (swap) starter = starter === 'X' ? 'O' : 'X';
+    b = [null, null, null, null, null, null, null, null, null];
+    turn = starter; over = false; win = null; busy = false;
+    for (var i = 0; i < 9; i++) cells[i].className = 'cell';
+    render();
+    if (mode !== 'friend' && turn === 'O') computerTurn();
+  }
+
+  function setMode(m) {
+    mode = m; starter = 'X';
+    var btns = document.querySelectorAll('.modes button');
+    for (var i = 0; i < btns.length; i++) btns[i].setAttribute('aria-pressed', btns[i].getAttribute('data-mode') === m ? 'true' : 'false');
+    newRound(false);
+  }
+
+  for (var i = 0; i < 9; i++) {
+    (function (idx) {
+      var c = document.createElement('button');
+      c.type = 'button';
+      c.addEventListener('click', function () { play(idx); });
+      boardEl.appendChild(c);
+      cells.push(c);
+    })(i);
+  }
+  var mb = document.querySelectorAll('.modes button');
+  for (var k = 0; k < mb.length; k++) {
+    mb[k].addEventListener('click', function (e) { setMode(e.currentTarget.getAttribute('data-mode')); });
+  }
+  $('again').addEventListener('click', function () { newRound(true); });
+
+  setMode('friend');
+})();
+
+</script>
+<script>
+(function () {
+  var FB = {
+    apiKey: "AIzaSyCBSWhb6_-lun2frB266XXkOTsn6G5H18E",
+    authDomain: "rubu-tic.firebaseapp.com",
+    databaseURL: "https://rubu-tic-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "rubu-tic",
+    storageBucket: "rubu-tic.firebasestorage.app",
+    messagingSenderId: "379592972549",
+    appId: "1:379592972549:web:a68405a930c7e1b3df3f6c"
+  };
+  var LINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  var db = null, uid = null, conn = false, dead = false, msg = '';
+  var phase = 'idle', token = 0, gid = null, gref = null, G = null;
+  var myMark = 'X', oppMark = 'O', oppLeft = false, seenOpp = false, scored = '';
+  var waitStub = null, waitRef = null;
+  var sc = RT.stats.online, cells = [];
+  var boardEl = document.getElementById('obd');
+  function $(id) { return document.getElementById(id); }
+  function noop() {}
+
+  //<derive>
+  function winner(bd) {
+    for (var k = 0; k < LINES.length; k++) {
+      var l = LINES[k];
+      if (bd[l[0]] && bd[l[0]] === bd[l[1]] && bd[l[0]] === bd[l[2]]) return { p: bd[l[0]], line: l };
+    }
+    return null;
+  }
+  function parse(s) {
+    if (typeof s !== 'string' || !/^m[0-8]{0,5}$/.test(s)) return [];
+    return s.slice(1).split('').map(Number);
+  }
+  function derive(g, me) {
+    var rr = (g && g.rr) || {}, mvv = (g && g.mv) || {};
+    var cur = Math.max(+rr.X || 0, +rr.O || 0), lists = { X: [], O: [] };
+    ['X', 'O'].forEach(function (m) { var e = mvv[m]; if (e && e.r === cur) lists[m] = parse(e.s); });
+    var b = [null,null,null,null,null,null,null,null,null], cnt = { X: 0, O: 0 };
+    var turn = cur % 2 === 0 ? 'X' : 'O', win = null;
+    for (;;) {
+      var l = lists[turn], k = cnt[turn];
+      if (k >= l.length) break;
+      var c = l[k];
+      if (b[c]) break;
+      b[c] = turn; cnt[turn]++;
+      win = winner(b);
+      if (win) break;
+      turn = turn === 'X' ? 'O' : 'X';
+    }
+    return { b: b, turn: turn, win: win, full: !win && cnt.X + cnt.O === 9, cur: cur };
+  }
+  //</derive>
+
+  function render() {
+    var d = phase === 'play' && G ? derive(G) : null;
+    if (d && (d.win || d.full) && scored !== gid + ':' + d.cur) {
+      scored = gid + ':' + d.cur;
+      if (d.win) { if (d.win.p === myMark) sc.me++; else sc.opp++; } else sc.D++;
+      RT.save();
+    }
+    $('sm').textContent = sc.me; $('oso').textContent = sc.opp; $('osd').textContent = sc.D;
+    var over = !!(d && (d.win || d.full));
+    var canPlay = !!d && !over && !oppLeft && seenOpp && d.turn === myMark;
+    for (var i = 0; i < 9; i++) {
+      var v = d ? d.b[i] : null, isWin = d && d.win && d.win.line.indexOf(i) > -1;
+      cells[i].className = 'cell' + (v ? ' ' + v.toLowerCase() + ' filled' : '') + (isWin ? ' win' : '') + (!v && !canPlay ? ' locked' : '');
+      cells[i].textContent = v || '';
+      cells[i].setAttribute('aria-label', 'Square ' + (i + 1) + (v ? ', ' + v : ', empty'));
+    }
+    var t = '', cls = '';
+    if (dead) t = 'Could not load online play. Check your internet and reopen the app.';
+    else if (phase === 'idle') t = msg || 'Press Find match to play';
+    else if (phase === 'search') { t = 'Searching for a player…'; cls = 'o'; }
+    else if (oppLeft) t = 'Opponent left the match';
+    else if (!seenOpp || !d) t = 'Starting match…';
+    else if (d.win) { t = d.win.p === myMark ? 'You win!' : 'Opponent wins'; cls = d.win.p.toLowerCase(); }
+    else if (d.full) t = "It's a draw";
+    else if (d.turn === myMark) { t = 'Your turn (' + myMark + ')'; cls = myMark.toLowerCase(); }
+    else { t = "Opponent's turn"; cls = d.turn.toLowerCase(); }
+    var s = $('ost'); s.textContent = t; s.className = cls;
+    $('pill').textContent = dead ? '' : (db ? (conn ? 'Connected' : 'Connecting…') : '');
+    var mb = $('main'), lb = $('leave');
+    if (phase === 'idle') { mb.textContent = 'Find match'; mb.disabled = dead; lb.disabled = true; }
+    else if (phase === 'search') { mb.textContent = 'Cancel search'; mb.disabled = false; lb.disabled = true; }
+    else if (oppLeft) { mb.textContent = 'Find new match'; mb.disabled = false; lb.disabled = false; }
+    else { mb.textContent = 'Play again'; mb.disabled = !over; lb.disabled = false; }
+  }
+
+  async function ensure() {
+    if (db && uid) return;
+    if (typeof firebase === 'undefined') { dead = true; throw new Error('nofb'); }
+    if (!firebase.apps.length) firebase.initializeApp(FB);
+    var a = await firebase.auth().signInAnonymously();
+    uid = a.user.uid; db = firebase.database();
+    db.ref('.info/connected').on('value', function (s) { conn = !!s.val(); render(); });
+  }
+
+  async function leaveAll() {
+    token++;
+    var ws = waitStub, wr = waitRef, gr = gref, m = myMark;
+    var oppHere = !!(G && G.pr && G.pr[oppMark]);
+    if (wr) wr.off();
+    if (gr) gr.off();
+    waitStub = null; waitRef = null; gref = null; G = null; gid = null;
+    phase = 'idle'; oppLeft = false; seenOpp = false; scored = ''; msg = '';
+    render();
+    if (!db) return;
+    try {
+      if (ws) {
+        await db.ref('waiting').transaction(function (c) { return c && c.g === ws ? null : c; });
+        db.ref('games/' + ws).onDisconnect().cancel();
+        await db.ref('games/' + ws).remove();
+      }
+      if (gr) {
+        gr.child('pr/' + m).onDisconnect().cancel();
+        await gr.child('pr/' + m).remove();
+        if (!oppHere) await gr.remove();
+      }
+    } catch (e) {}
+  }
+
+  async function startGame(role, id) {
+    gid = id; myMark = role; oppMark = role === 'X' ? 'O' : 'X';
+    phase = 'play'; oppLeft = false; seenOpp = false; scored = ''; G = null; waitStub = null;
+    gref = db.ref('games/' + id);
+    render();
+    try {
+      gref.onDisconnect().cancel();
+      var pr = gref.child('pr/' + myMark);
+      await pr.set(true);
+      pr.onDisconnect().remove();
+      if (role === 'O') {
+        await gref.child('rr/O').set(0);
+        await gref.child('mv/O').set({ r: 0, s: 'm' });
+      }
+      gref.on('value', onGame, function () { oppLeft = true; render(); });
+    } catch (e) {
+      await leaveAll(); msg = 'Could not start the match. Try again.'; render();
+    }
+  }
+
+  function onGame(snap) {
+    var g = snap.val();
+    if (phase !== 'play') return;
+    G = g;
+    if (!g) { oppLeft = true; render(); return; }
+    var pr = g.pr || {};
+    if (pr[oppMark]) { seenOpp = true; oppLeft = false; } else if (seenOpp) oppLeft = true;
+    var d = derive(g), rr = g.rr || {};
+    if ((+rr[myMark] || 0) < d.cur) {
+      gref.child('rr/' + myMark).set(d.cur).catch(noop);
+      gref.child('mv/' + myMark).set({ r: d.cur, s: 'm' }).catch(noop);
+    }
+    render();
+  }
+
+  async function findMatch() {
+    if (dead || phase !== 'idle') return;
+    var my = ++token;
+    phase = 'search'; msg = ''; render();
+    try {
+      await ensure();
+      for (var attempt = 0; attempt < 6; attempt++) {
+        if (my !== token) return;
+        var stub = db.ref('games').push().key, sref = db.ref('games/' + stub);
+        await sref.child('pl/X').set(uid);
+        await sref.child('rr/X').set(0);
+        await sref.child('mv/X').set({ r: 0, s: 'm' });
+        sref.onDisconnect().remove();
+        waitStub = stub;
+        var seen = null;
+        var res = await db.ref('waiting').transaction(function (cur) {
+          seen = cur;
+          if (cur && cur.u !== uid) return null;
+          return { u: uid, g: stub, t: Date.now() };
+        });
+        if (my !== token) return;
+        var val = res.snapshot.val();
+        if (val && val.u === uid && val.g === stub) {
+          waitRef = db.ref('games/' + stub + '/pl/O');
+          waitRef.on('value', function (s) {
+            if (s.val() && phase === 'search' && my === token) {
+              waitRef.off(); waitRef = null; startGame('X', stub);
+            }
+          });
+          return;
+        }
+        waitStub = null;
+        sref.onDisconnect().cancel();
+        await sref.remove();
+        if (seen && seen.g) {
+          var og = (await db.ref('games/' + seen.g).once('value')).val();
+          if (og && og.pl && og.pl.X && !og.pl.O) {
+            var ok = true;
+            try { await db.ref('games/' + seen.g + '/pl/O').set(uid); } catch (e) { ok = false; }
+            if (ok && my === token) { await startGame('O', seen.g); return; }
+          }
+        }
+      }
+      phase = 'idle'; msg = 'No match found. Try again.';
+    } catch (e) {
+      phase = 'idle'; msg = 'Connection problem. Try again.';
+    }
+    render();
+  }
+
+  function play(i) {
+    if (phase !== 'play' || !G || oppLeft || !seenOpp) return;
+    var d = derive(G);
+    if (d.win || d.full || d.turn !== myMark || d.b[i]) return;
+    var e = G.mv && G.mv[myMark];
+    var s = e && e.r === d.cur && typeof e.s === 'string' ? e.s : 'm';
+    if (s.length >= 6) return;
+    try { if (navigator.vibrate) navigator.vibrate(12); } catch (x) {}
+    gref.child('mv/' + myMark).set({ r: d.cur, s: s + i }).catch(noop);
+  }
+
+  for (var k = 0; k < 9; k++) {
+    (function (idx) {
+      var c = document.createElement('button');
+      c.type = 'button';
+      c.addEventListener('click', function () { play(idx); });
+      boardEl.appendChild(c); cells.push(c);
+    })(k);
+  }
+  $('main').addEventListener('click', function () {
+    if (phase === 'idle') findMatch();
+    else if (phase === 'search') leaveAll();
+    else if (oppLeft) { leaveAll().then(findMatch); }
+    else if (G) {
+      var d = derive(G);
+      gref.child('rr/' + myMark).set(d.cur + 1).catch(noop);
+      gref.child('mv/' + myMark).set({ r: d.cur + 1, s: 'm' }).catch(noop);
+    }
+  });
+  $('leave').addEventListener('click', leaveAll);
+  window.__stopOnline = leaveAll;
+  window.__startOnline = function () { ensure().then(render, function () { render(); }); };
+  render();
+})();
+</script>
+<script>
+(function(){
+var v1=document.getElementById('v1'),v2=document.getElementById('v2');
+document.getElementById('claim').addEventListener('click',function(){v1.hidden=true;v2.hidden=false;document.title='Online';window.scrollTo(0,0);if(window.__startOnline)window.__startOnline();});
+document.getElementById('back').addEventListener('click',function(){if(window.__stopOnline)window.__stopOnline();v2.hidden=true;v1.hidden=false;document.title='Rubu tic';window.scrollTo(0,0);});
+})();
+</script>
+</body>
+</html>
